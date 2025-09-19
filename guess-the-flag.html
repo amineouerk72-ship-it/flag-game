@@ -1,0 +1,824 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Flags of Every Country in the World</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.light {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        body.dark {
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 16px;
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        h1 {
+            font-size: 26px;
+            margin: 20px 0;
+            font-weight: 700;
+        }
+
+        #flag-img {
+            width: 80%;
+            max-width: 300px;
+            margin: 25px auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* UPGRADED ANSWER BUTTONS */
+        .btn-option {
+            display: block;
+            width: 85%;
+            margin: 12px auto;
+            padding: 16px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #333;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-option:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #e0e5ec, #a8b3c5);
+        }
+
+        .btn-option:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-option.correct {
+            background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+            color: white !important;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4) !important;
+            animation: correctPulse 0.4s ease;
+        }
+
+        .btn-option.wrong {
+            background: linear-gradient(135deg, #F44336, #D32F2F) !important;
+            color: white !important;
+            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.4) !important;
+            animation: shake 0.5s ease, wrongFade 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes wrongFade {
+            0% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+        #score, #round, #timer, #high-score {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #start-btn {
+            padding: 16px 40px;
+            font-size: 20px;
+            background-color: var(--accent);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+            font-size: 32px;
+        }
+
+        .game-over button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* LOADING SCREEN */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--loading-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            color: var(--loading-text);
+        }
+
+        #loading-screen img {
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        /* Language & Theme Controls */
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        select, button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: var(--control-bg);
+            color: var(--control-text);
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body class="light">
+    <div id="controls">
+        <select id="language-select">
+            <option value="en">English</option>
+            <option value="ar">العربية</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="ru">Русский</option>
+            <option value="zh">中文</option>
+            <option value="pt">Português</option>
+            <option value="ja">日本語</option>
+        </select>
+        <button id="theme-toggle">🌙 Dark Mode</button>
+    </div>
+
+    <!-- LOADING SCREEN (FROM ORIGINAL SITE) -->
+    <div id="loading-screen">
+        <img src="https://world-geography-games.com/games/phaser/game-loading.png" alt="Loading...">
+        <div id="loading-text">Loading game...</div>
+    </div>
+
+    <div class="container">
+        <!-- NEW LOGO: GUESS THE FLAG -->
+        <img src="guess-the-flag-logo.png" alt="Guess the Flag" style="max-width: 100%; margin: 20px 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+
+        <h1 id="title">Guess the Flags of Every Country in the World</h1>
+
+        <div id="high-score">🏆 High Score: 0</div>
+        <div id="score">Score: 0</div>
+        <div id="round">Round: 1</div>
+        <div id="timer">⏱️ 10</div>
+
+        <img id="flag-img" src="" alt="Country Flag">
+
+        <div id="options-container"></div>
+
+        <button id="start-btn">Start Game</button>
+    </div>
+
+    <script>
+        // Translation dictionary
+        const translations = {
+            en: {
+                title: "Guess the Flags of Every Country in the World",
+                start: "Start Game",
+                gameOver: "⏰ Time's Up!",
+                playAgain: "Play Again",
+                loading: "Loading game...",
+                highScore: "🏆 High Score: ",
+                score: "Score: ",
+                round: "Round: ",
+                timer: "⏱️ ",
+                correct: "Correct!",
+                wrong: "Wrong!"
+            },
+            ar: {
+                title: "خمن أعلام كل دول العالم",
+                start: "ابدأ اللعبة",
+                gameOver: "⏰ انتهى الوقت!",
+                playAgain: "لعب مرة أخرى",
+                loading: "جارٍ تحميل اللعبة...",
+                highScore: "🏆 أعلى نتيجة: ",
+                score: "النتيجة: ",
+                round: "الجولة: ",
+                timer: "⏱️ ",
+                correct: "صحيح!",
+                wrong: "خطأ!"
+            },
+            es: {
+                title: "Adivina las banderas de todos los países del mundo",
+                start: "Empezar Juego",
+                gameOver: "⏰ ¡Se acabó el tiempo!",
+                playAgain: "Jugar de nuevo",
+                loading: "Cargando juego...",
+                highScore: "🏆 Puntuación más alta: ",
+                score: "Puntuación: ",
+                round: "Ronda: ",
+                timer: "⏱️ ",
+                correct: "¡Correcto!",
+                wrong: "¡Incorrecto!"
+            },
+            de: {
+                title: "Errate die Flaggen aller Länder der Welt",
+                start: "Spiel starten",
+                gameOver: "⏰ Zeit ist um!",
+                playAgain: "Erneut spielen",
+                loading: "Spiel wird geladen...",
+                highScore: "🏆 Höchstpunktzahl: ",
+                score: "Punktzahl: ",
+                round: "Runde: ",
+                timer: "⏱️ ",
+                correct: "Richtig!",
+                wrong: "Falsch!"
+            },
+            ru: {
+                title: "Угадайте флаги всех стран мира",
+                start: "Начать игру",
+                gameOver: "⏰ Время вышло!",
+                playAgain: "Играть снова",
+                loading: "Загрузка игры...",
+                highScore: "🏆 Лучший результат: ",
+                score: "Счет: ",
+                round: "Раунд: ",
+                timer: "⏱️ ",
+                correct: "Правильно!",
+                wrong: "Неправильно!"
+            },
+            zh: {
+                title: "猜猜世界上每个国家的国旗",
+                start: "开始游戏",
+                gameOver: "⏰ 时间到！",
+                playAgain: "再玩一次",
+                loading: "正在加载游戏...",
+                highScore: "🏆 最高分: ",
+                score: "分数: ",
+                round: "回合: ",
+                timer: "⏱️ ",
+                correct: "正确！",
+                wrong: "错误！"
+            },
+            pt: {
+                title: "Adivinhe as bandeiras de todos os países do mundo",
+                start: "Iniciar Jogo",
+                gameOver: "⏰ Acabou o tempo!",
+                playAgain: "Jogar novamente",
+                loading: "Carregando jogo...",
+                highScore: "🏆 Pontuação máxima: ",
+                score: "Pontuação: ",
+                round: "Rodada: ",
+                timer: "⏱️ ",
+                correct: "Correto!",
+                wrong: "Errado!"
+            },
+            ja: {
+                title: "世界のすべての国の国旗を当てよう",
+                start: "ゲーム開始",
+                gameOver: "⏰ 時間切れ！",
+                playAgain: "もう一度プレイ",
+                loading: "ゲームを読み込んでいます...",
+                highScore: "🏆 最高スコア: ",
+                score: "スコア: ",
+                round: "ラウンド: ",
+                timer: "⏱️ ",
+                correct: "正解！",
+                wrong: "不正解！"
+            }
+        };
+
+        // Full list of countries
+        const allCountries = [
+            { name: "Afghanistan", flag: "https://flagcdn.com/w320/af.png" },
+            { name: "Albania", flag: "https://flagcdn.com/w320/al.png" },
+            { name: "Algeria", flag: "https://flagcdn.com/w320/dz.png" },
+            { name: "Andorra", flag: "https://flagcdn.com/w320/ad.png" },
+            { name: "Angola", flag: "https://flagcdn.com/w320/ao.png" },
+            { name: "Antigua and Barbuda", flag: "https://flagcdn.com/w320/ag.png" },
+            { name: "Argentina", flag: "https://flagcdn.com/w320/ar.png" },
+            { name: "Armenia", flag: "https://flagcdn.com/w320/am.png" },
+            { name: "Australia", flag: "https://flagcdn.com/w320/au.png" },
+            { name: "Austria", flag: "https://flagcdn.com/w320/at.png" },
+            { name: "Azerbaijan", flag: "https://flagcdn.com/w320/az.png" },
+            { name: "Bahamas", flag: "https://flagcdn.com/w320/bs.png" },
+            { name: "Bahrain", flag: "https://flagcdn.com/w320/bh.png" },
+            { name: "Bangladesh", flag: "https://flagcdn.com/w320/bd.png" },
+            { name: "Barbados", flag: "https://flagcdn.com/w320/bb.png" },
+            { name: "Belarus", flag: "https://flagcdn.com/w320/by.png" },
+            { name: "Belgium", flag: "https://flagcdn.com/w320/be.png" },
+            { name: "Belize", flag: "https://flagcdn.com/w320/bz.png" },
+            { name: "Benin", flag: "https://flagcdn.com/w320/bj.png" },
+            { name: "Bhutan", flag: "https://flagcdn.com/w320/bt.png" },
+            { name: "Bolivia", flag: "https://flagcdn.com/w320/bo.png" },
+            { name: "Bosnia and Herzegovina", flag: "https://flagcdn.com/w320/ba.png" },
+            { name: "Botswana", flag: "https://flagcdn.com/w320/bw.png" },
+            { name: "Brazil", flag: "https://flagcdn.com/w320/br.png" },
+            { name: "Brunei", flag: "https://flagcdn.com/w320/bn.png" },
+            { name: "Bulgaria", flag: "https://flagcdn.com/w320/bg.png" },
+            { name: "Burkina Faso", flag: "https://flagcdn.com/w320/bf.png" },
+            { name: "Burundi", flag: "https://flagcdn.com/w320/bi.png" },
+            { name: "Cabo Verde", flag: "https://flagcdn.com/w320/cv.png" },
+            { name: "Cambodia", flag: "https://flagcdn.com/w320/kh.png" },
+            { name: "Cameroon", flag: "https://flagcdn.com/w320/cm.png" },
+            { name: "Canada", flag: "https://flagcdn.com/w320/ca.png" },
+            { name: "Central African Republic", flag: "https://flagcdn.com/w320/cf.png" },
+            { name: "Chad", flag: "https://flagcdn.com/w320/td.png" },
+            { name: "Chile", flag: "https://flagcdn.com/w320/cl.png" },
+            { name: "China", flag: "https://flagcdn.com/w320/cn.png" },
+            { name: "Colombia", flag: "https://flagcdn.com/w320/co.png" },
+            { name: "Comoros", flag: "https://flagcdn.com/w320/km.png" },
+            { name: "Congo", flag: "https://flagcdn.com/w320/cg.png" },
+            { name: "Costa Rica", flag: "https://flagcdn.com/w320/cr.png" },
+            { name: "Croatia", flag: "https://flagcdn.com/w320/hr.png" },
+            { name: "Cuba", flag: "https://flagcdn.com/w320/cu.png" },
+            { name: "Cyprus", flag: "https://flagcdn.com/w320/cy.png" },
+            { name: "Czech Republic", flag: "https://flagcdn.com/w320/cz.png" },
+            { name: "Denmark", flag: "https://flagcdn.com/w320/dk.png" },
+            { name: "Djibouti", flag: "https://flagcdn.com/w320/dj.png" },
+            { name: "Dominica", flag: "https://flagcdn.com/w320/dm.png" },
+            { name: "Dominican Republic", flag: "https://flagcdn.com/w320/do.png" },
+            { name: "Ecuador", flag: "https://flagcdn.com/w320/ec.png" },
+            { name: "Egypt", flag: "https://flagcdn.com/w320/eg.png" },
+            { name: "El Salvador", flag: "https://flagcdn.com/w320/sv.png" },
+            { name: "Equatorial Guinea", flag: "https://flagcdn.com/w320/gq.png" },
+            { name: "Eritrea", flag: "https://flagcdn.com/w320/er.png" },
+            { name: "Estonia", flag: "https://flagcdn.com/w320/ee.png" },
+            { name: "Eswatini", flag: "https://flagcdn.com/w320/sz.png" },
+            { name: "Ethiopia", flag: "https://flagcdn.com/w320/et.png" },
+            { name: "Fiji", flag: "https://flagcdn.com/w320/fj.png" },
+            { name: "Finland", flag: "https://flagcdn.com/w320/fi.png" },
+            { name: "France", flag: "https://flagcdn.com/w320/fr.png" },
+            { name: "Gabon", flag: "https://flagcdn.com/w320/ga.png" },
+            { name: "Gambia", flag: "https://flagcdn.com/w320/gm.png" },
+            { name: "Georgia", flag: "https://flagcdn.com/w320/ge.png" },
+            { name: "Germany", flag: "https://flagcdn.com/w320/de.png" },
+            { name: "Ghana", flag: "https://flagcdn.com/w320/gh.png" },
+            { name: "Greece", flag: "https://flagcdn.com/w320/gr.png" },
+            { name: "Grenada", flag: "https://flagcdn.com/w320/gd.png" },
+            { name: "Guatemala", flag: "https://flagcdn.com/w320/gt.png" },
+            { name: "Guinea", flag: "https://flagcdn.com/w320/gn.png" },
+            { name: "Guinea-Bissau", flag: "https://flagcdn.com/w320/gw.png" },
+            { name: "Guyana", flag: "https://flagcdn.com/w320/gy.png" },
+            { name: "Haiti", flag: "https://flagcdn.com/w320/ht.png" },
+            { name: "Honduras", flag: "https://flagcdn.com/w320/hn.png" },
+            { name: "Hungary", flag: "https://flagcdn.com/w320/hu.png" },
+            { name: "Iceland", flag: "https://flagcdn.com/w320/is.png" },
+            { name: "India", flag: "https://flagcdn.com/w320/in.png" },
+            { name: "Indonesia", flag: "https://flagcdn.com/w320/id.png" },
+            { name: "Iran", flag: "https://flagcdn.com/w320/ir.png" },
+            { name: "Iraq", flag: "https://flagcdn.com/w320/iq.png" },
+            { name: "Ireland", flag: "https://flagcdn.com/w320/ie.png" },
+            { name: "Israel", flag: "https://flagcdn.com/w320/il.png" },
+            { name: "Italy", flag: "https://flagcdn.com/w320/it.png" },
+            { name: "Jamaica", flag: "https://flagcdn.com/w320/jm.png" },
+            { name: "Japan", flag: "https://flagcdn.com/w320/jp.png" },
+            { name: "Jordan", flag: "https://flagcdn.com/w320/jo.png" },
+            { name: "Kazakhstan", flag: "https://flagcdn.com/w320/kz.png" },
+            { name: "Kenya", flag: "https://flagcdn.com/w320/ke.png" },
+            { name: "Kiribati", flag: "https://flagcdn.com/w320/ki.png" },
+            { name: "Kuwait", flag: "https://flagcdn.com/w320/kw.png" },
+            { name: "Kyrgyzstan", flag: "https://flagcdn.com/w320/kg.png" },
+            { name: "Laos", flag: "https://flagcdn.com/w320/la.png" },
+            { name: "Latvia", flag: "https://flagcdn.com/w320/lv.png" },
+            { name: "Lebanon", flag: "https://flagcdn.com/w320/lb.png" },
+            { name: "Lesotho", flag: "https://flagcdn.com/w320/ls.png" },
+            { name: "Liberia", flag: "https://flagcdn.com/w320/lr.png" },
+            { name: "Libya", flag: "https://flagcdn.com/w320/ly.png" },
+            { name: "Liechtenstein", flag: "https://flagcdn.com/w320/li.png" },
+            { name: "Lithuania", flag: "https://flagcdn.com/w320/lt.png" },
+            { name: "Luxembourg", flag: "https://flagcdn.com/w320/lu.png" },
+            { name: "Madagascar", flag: "https://flagcdn.com/w320/mg.png" },
+            { name: "Malawi", flag: "https://flagcdn.com/w320/mw.png" },
+            { name: "Malaysia", flag: "https://flagcdn.com/w320/my.png" },
+            { name: "Maldives", flag: "https://flagcdn.com/w320/mv.png" },
+            { name: "Mali", flag: "https://flagcdn.com/w320/ml.png" },
+            { name: "Malta", flag: "https://flagcdn.com/w320/mt.png" },
+            { name: "Marshall Islands", flag: "https://flagcdn.com/w320/mh.png" },
+            { name: "Mauritania", flag: "https://flagcdn.com/w320/mr.png" },
+            { name: "Mauritius", flag: "https://flagcdn.com/w320/mu.png" },
+            { name: "Mexico", flag: "https://flagcdn.com/w320/mx.png" },
+            { name: "Micronesia", flag: "https://flagcdn.com/w320/fm.png" },
+            { name: "Moldova", flag: "https://flagcdn.com/w320/md.png" },
+            { name: "Monaco", flag: "https://flagcdn.com/w320/mc.png" },
+            { name: "Mongolia", flag: "https://flagcdn.com/w320/mn.png" },
+            { name: "Montenegro", flag: "https://flagcdn.com/w320/me.png" },
+            { name: "Morocco", flag: "https://flagcdn.com/w320/ma.png" },
+            { name: "Mozambique", flag: "https://flagcdn.com/w320/mz.png" },
+            { name: "Myanmar", flag: "https://flagcdn.com/w320/mm.png" },
+            { name: "Namibia", flag: "https://flagcdn.com/w320/na.png" },
+            { name: "Nauru", flag: "https://flagcdn.com/w320/nr.png" },
+            { name: "Nepal", flag: "https://flagcdn.com/w320/np.png" },
+            { name: "Netherlands", flag: "https://flagcdn.com/w320/nl.png" },
+            { name: "New Zealand", flag: "https://flagcdn.com/w320/nz.png" },
+            { name: "Nicaragua", flag: "https://flagcdn.com/w320/ni.png" },
+            { name: "Niger", flag: "https://flagcdn.com/w320/ne.png" },
+            { name: "Nigeria", flag: "https://flagcdn.com/w320/ng.png" },
+            { name: "North Korea", flag: "https://flagcdn.com/w320/kp.png" },
+            { name: "North Macedonia", flag: "https://flagcdn.com/w320/mk.png" },
+            { name: "Norway", flag: "https://flagcdn.com/w320/no.png" },
+            { name: "Oman", flag: "https://flagcdn.com/w320/om.png" },
+            { name: "Pakistan", flag: "https://flagcdn.com/w320/pk.png" },
+            { name: "Palau", flag: "https://flagcdn.com/w320/pw.png" },
+            { name: "Panama", flag: "https://flagcdn.com/w320/pa.png" },
+            { name: "Papua New Guinea", flag: "https://flagcdn.com/w320/pg.png" },
+            { name: "Paraguay", flag: "https://flagcdn.com/w320/py.png" },
+            { name: "Peru", flag: "https://flagcdn.com/w320/pe.png" },
+            { name: "Philippines", flag: "https://flagcdn.com/w320/ph.png" },
+            { name: "Poland", flag: "https://flagcdn.com/w320/pl.png" },
+            { name: "Portugal", flag: "https://flagcdn.com/w320/pt.png" },
+            { name: "Qatar", flag: "https://flagcdn.com/w320/qa.png" },
+            { name: "Romania", flag: "https://flagcdn.com/w320/ro.png" },
+            { name: "Russia", flag: "https://flagcdn.com/w320/ru.png" },
+            { name: "Rwanda", flag: "https://flagcdn.com/w320/rw.png" },
+            { name: "Saint Kitts and Nevis", flag: "https://flagcdn.com/w320/kn.png" },
+            { name: "Saint Lucia", flag: "https://flagcdn.com/w320/lc.png" },
+            { name: "Saint Vincent and the Grenadines", flag: "https://flagcdn.com/w320/vc.png" },
+            { name: "Samoa", flag: "https://flagcdn.com/w320/ws.png" },
+            { name: "San Marino", flag: "https://flagcdn.com/w320/sm.png" },
+            { name: "Sao Tome and Principe", flag: "https://flagcdn.com/w320/st.png" },
+            { name: "Saudi Arabia", flag: "https://flagcdn.com/w320/sa.png" },
+            { name: "Senegal", flag: "https://flagcdn.com/w320/sn.png" },
+            { name: "Serbia", flag: "https://flagcdn.com/w320/rs.png" },
+            { name: "Seychelles", flag: "https://flagcdn.com/w320/sc.png" },
+            { name: "Sierra Leone", flag: "https://flagcdn.com/w320/sl.png" },
+            { name: "Singapore", flag: "https://flagcdn.com/w320/sg.png" },
+            { name: "Slovakia", flag: "https://flagcdn.com/w320/sk.png" },
+            { name: "Slovenia", flag: "https://flagcdn.com/w320/si.png" },
+            { name: "Solomon Islands", flag: "https://flagcdn.com/w320/sb.png" },
+            { name: "Somalia", flag: "https://flagcdn.com/w320/so.png" },
+            { name: "South Africa", flag: "https://flagcdn.com/w320/za.png" },
+            { name: "South Korea", flag: "https://flagcdn.com/w320/kr.png" },
+            { name: "South Sudan", flag: "https://flagcdn.com/w320/ss.png" },
+            { name: "Spain", flag: "https://flagcdn.com/w320/es.png" },
+            { name: "Sri Lanka", flag: "https://flagcdn.com/w320/lk.png" },
+            { name: "Sudan", flag: "https://flagcdn.com/w320/sd.png" },
+            { name: "Suriname", flag: "https://flagcdn.com/w320/sr.png" },
+            { name: "Sweden", flag: "https://flagcdn.com/w320/se.png" },
+            { name: "Switzerland", flag: "https://flagcdn.com/w320/ch.png" },
+            { name: "Syria", flag: "https://flagcdn.com/w320/sy.png" },
+            { name: "Taiwan", flag: "https://flagcdn.com/w320/tw.png" },
+            { name: "Tajikistan", flag: "https://flagcdn.com/w320/tj.png" },
+            { name: "Tanzania", flag: "https://flagcdn.com/w320/tz.png" },
+            { name: "Thailand", flag: "https://flagcdn.com/w320/th.png" },
+            { name: "Timor-Leste", flag: "https://flagcdn.com/w320/tl.png" },
+            { name: "Togo", flag: "https://flagcdn.com/w320/tg.png" },
+            { name: "Tonga", flag: "https://flagcdn.com/w320/to.png" },
+            { name: "Trinidad and Tobago", flag: "https://flagcdn.com/w320/tt.png" },
+            { name: "Tunisia", flag: "https://flagcdn.com/w320/tn.png" },
+            { name: "Turkey", flag: "https://flagcdn.com/w320/tr.png" },
+            { name: "Turkmenistan", flag: "https://flagcdn.com/w320/tm.png" },
+            { name: "Tuvalu", flag: "https://flagcdn.com/w320/tv.png" },
+            { name: "Uganda", flag: "https://flagcdn.com/w320/ug.png" },
+            { name: "Ukraine", flag: "https://flagcdn.com/w320/ua.png" },
+            { name: "United Arab Emirates", flag: "https://flagcdn.com/w320/ae.png" },
+            { name: "United Kingdom", flag: "https://flagcdn.com/w320/gb.png" },
+            { name: "United States", flag: "https://flagcdn.com/w320/us.png" },
+            { name: "Uruguay", flag: "https://flagcdn.com/w320/uy.png" },
+            { name: "Uzbekistan", flag: "https://flagcdn.com/w320/uz.png" },
+            { name: "Vanuatu", flag: "https://flagcdn.com/w320/vu.png" },
+            { name: "Vatican City", flag: "https://flagcdn.com/w320/va.png" },
+            { name: "Venezuela", flag: "https://flagcdn.com/w320/ve.png" },
+            { name: "Vietnam", flag: "https://flagcdn.com/w320/vn.png" },
+            { name: "Yemen", flag: "https://flagcdn.com/w320/ye.png" },
+            { name: "Zambia", flag: "https://flagcdn.com/w320/zm.png" },
+            { name: "Zimbabwe", flag: "https://flagcdn.com/w320/zw.png" }
+        ];
+
+        let score = 0;
+        let round = 1;
+        let highScore = localStorage.getItem('flagGameHighScore') || 0;
+        let remainingCountries = [];
+        let currentQuestion = {};
+        let timerInterval;
+        let timeLeft = 10;
+        let currentLang = localStorage.getItem('selectedLanguage') || 'en';
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        const flagImg = document.getElementById('flag-img');
+        const optionsContainer = document.getElementById('options-container');
+        const scoreDisplay = document.getElementById('score');
+        const roundDisplay = document.getElementById('round');
+        const timerDisplay = document.getElementById('timer');
+        const highScoreDisplay = document.getElementById('high-score');
+        const startBtn = document.getElementById('start-btn');
+        const loadingScreen = document.getElementById('loading-screen');
+        const languageSelect = document.getElementById('language-select');
+        const themeToggle = document.getElementById('theme-toggle');
+        const titleElement = document.getElementById('title');
+        const loadingText = document.getElementById('loading-text');
+
+        // Apply translations
+        function applyLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('selectedLanguage', lang);
+            const t = translations[lang];
+            titleElement.textContent = t.title;
+            startBtn.textContent = t.start;
+            loadingText.textContent = t.loading;
+            if (highScoreDisplay) highScoreDisplay.textContent = t.highScore + highScore;
+            if (scoreDisplay) scoreDisplay.textContent = t.score + score;
+            if (roundDisplay) roundDisplay.textContent = t.round + round;
+            if (timerDisplay) timerDisplay.textContent = t.timer + timeLeft;
+        }
+
+        // Apply theme
+        function applyTheme(isDark) {
+            isDarkMode = isDark;
+            localStorage.setItem('darkMode', isDark);
+            if (isDark) {
+                document.body.classList.remove('light');
+                document.body.classList.add('dark');
+                themeToggle.textContent = '☀️ Light Mode';
+                document.documentElement.style.setProperty('--card-bg', '#1e1e1e');
+                document.documentElement.style.setProperty('--btn-bg', '#2d2d2d');
+                document.documentElement.style.setProperty('--btn-text', '#ffffff');
+                document.documentElement.style.setProperty('--btn-border', '#444444');
+                document.documentElement.style.setProperty('--accent', '#bb86fc');
+                document.documentElement.style.setProperty('--loading-bg', '#121212');
+                document.documentElement.style.setProperty('--loading-text', '#ffffff');
+                document.documentElement.style.setProperty('--control-bg', '#2d2d2d');
+                document.documentElement.style.setProperty('--control-text', '#ffffff');
+            } else {
+                document.body.classList.remove('dark');
+                document.body.classList.add('light');
+                themeToggle.textContent = '🌙 Dark Mode';
+                document.documentElement.style.setProperty('--card-bg', '#ffffff');
+                document.documentElement.style.setProperty('--btn-bg', '#f5f5f5');
+                document.documentElement.style.setProperty('--btn-text', '#000000');
+                document.documentElement.style.setProperty('--btn-border', '#cccccc');
+                document.documentElement.style.setProperty('--accent', '#2196F3');
+                document.documentElement.style.setProperty('--loading-bg', '#ffffff');
+                document.documentElement.style.setProperty('--loading-text', '#000000');
+                document.documentElement.style.setProperty('--control-bg', '#ffffff');
+                document.documentElement.style.setProperty('--control-text', '#000000');
+            }
+        }
+
+        // Initialize
+        applyLanguage(currentLang);
+        applyTheme(isDarkMode);
+
+        languageSelect.value = currentLang;
+        languageSelect.addEventListener('change', () => {
+            applyLanguage(languageSelect.value);
+        });
+
+        themeToggle.addEventListener('click', () => {
+            applyTheme(!isDarkMode);
+        });
+
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 2000);
+
+        startBtn.addEventListener('click', startGame);
+
+        function startGame() {
+            score = 0;
+            round = 1;
+            remainingCountries = [...allCountries];
+            updateDisplays();
+            startBtn.style.display = 'none';
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            clearTimeout(timerInterval);
+            optionsContainer.innerHTML = '';
+
+            if (remainingCountries.length === 0) {
+                round++;
+                remainingCountries = [...allCountries];
+                alert(`🎉 Round ${round - 1} complete! Starting Round ${round}`);
+                roundDisplay.textContent = translations[currentLang].round + round;
+            }
+
+            const randomIndex = Math.floor(Math.random() * remainingCountries.length);
+            currentQuestion = remainingCountries[randomIndex];
+            remainingCountries.splice(randomIndex, 1);
+
+            flagImg.src = currentQuestion.flag;
+            flagImg.alt = `Flag of ${currentQuestion.name}`;
+
+            // Group countries by region
+            const regions = {
+                'Africa': ['Egypt', 'Nigeria', 'South Africa', 'Kenya', 'Morocco', 'Ghana', 'Tunisia', 'Algeria', 'Ethiopia', 'Senegal', 'Angola', 'Cameroon', 'Ivory Coast', 'Zimbabwe', 'Zambia', 'Tanzania', 'Uganda', 'Rwanda', 'Mali', 'Chad', 'Sudan', 'Libya', 'Togo', 'Benin', 'Niger', 'Burkina Faso', 'Congo', 'Gabon', 'Mozambique', 'Madagascar', 'Mauritius', 'Seychelles', 'Eswatini', 'Lesotho', 'Botswana', 'Namibia'],
+                'Asia': ['China', 'India', 'Japan', 'South Korea', 'Indonesia', 'Pakistan', 'Bangladesh', 'Vietnam', 'Thailand', 'Myanmar', 'Philippines', 'Malaysia', 'Singapore', 'Cambodia', 'Laos', 'Brunei', 'Timor-Leste', 'Sri Lanka', 'Nepal', 'Bhutan', 'Maldives', 'Afghanistan', 'Iran', 'Iraq', 'Saudi Arabia', 'Turkey', 'Israel', 'Jordan', 'Lebanon', 'Syria', 'Yemen', 'Oman', 'UAE', 'Qatar', 'Kuwait', 'Bahrain', 'Kazakhstan', 'Uzbekistan', 'Turkmenistan', 'Kyrgyzstan', 'Tajikistan', 'Mongolia', 'Georgia', 'Armenia', 'Azerbaijan', 'Cyprus'],
+                'Europe': ['Germany', 'France', 'Italy', 'Spain', 'United Kingdom', 'Russia', 'Netherlands', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Iceland', 'Greece', 'Portugal', 'Poland', 'Ukraine', 'Romania', 'Czech Republic', 'Hungary', 'Austria', 'Switzerland', 'Belgium', 'Ireland', 'Scotland', 'Wales', 'Bulgaria', 'Croatia', 'Serbia', 'Slovenia', 'Slovakia', 'Estonia', 'Latvia', 'Lithuania', 'Belarus', 'Moldova', 'Albania', 'Montenegro', 'North Macedonia', 'Bosnia and Herzegovina', 'Kosovo', 'Luxembourg', 'Andorra', 'Monaco', 'Liechtenstein', 'San Marino', 'Vatican City', 'Malta', 'Cyprus'],
+                'Americas': ['United States', 'Canada', 'Mexico', 'Brazil', 'Argentina', 'Colombia', 'Peru', 'Chile', 'Ecuador', 'Venezuela', 'Bolivia', 'Paraguay', 'Uruguay', 'Guyana', 'Suriname', 'French Guiana', 'Panama', 'Costa Rica', 'Nicaragua', 'Honduras', 'El Salvador', 'Guatemala', 'Belize', 'Cuba', 'Jamaica', 'Haiti', 'Dominican Republic', 'Puerto Rico', 'Trinidad and Tobago', 'Barbados', 'Bahamas', 'Grenada', 'Saint Lucia', 'Antigua and Barbuda', 'Saint Kitts and Nevis'],
+                'Oceania': ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea', 'Samoa', 'Tonga', 'Vanuatu', 'Solomon Islands', 'Kiribati', 'Palau', 'Marshall Islands', 'Micronesia', 'Nauru', 'Tuvalu', 'Guam', 'Northern Mariana Islands', 'American Samoa', 'Cook Islands', 'Niue', 'Tokelau', 'French Polynesia', 'New Caledonia', 'Wallis and Futuna']
+            };
+
+            // Find which region the correct country belongs to
+            let correctRegion = 'World';
+            for (const [region, countries] of Object.entries(regions)) {
+                if (countries.includes(currentQuestion.name)) {
+                    correctRegion = region;
+                    break;
+                }
+            }
+
+            // Start with correct answer
+            let options = [currentQuestion.name];
+
+            // Add 3 wrong answers from the SAME REGION (if possible)
+            const regionCountries = regions[correctRegion] || allCountries.map(c => c.name);
+            const wrongOptions = regionCountries.filter(name => name !== currentQuestion.name);
+
+            while (options.length < 4 && wrongOptions.length > 0) {
+                const randomIndex = Math.floor(Math.random() * wrongOptions.length);
+                const distractor = wrongOptions.splice(randomIndex, 1)[0];
+                options.push(distractor);
+            }
+
+            // If not enough regional options, fill with random ones
+            if (options.length < 4) {
+                const allNames = allCountries.map(c => c.name);
+                const fillerOptions = allNames.filter(name => !options.includes(name));
+                while (options.length < 4 && fillerOptions.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * fillerOptions.length);
+                    const filler = fillerOptions.splice(randomIndex, 1)[0];
+                    options.push(filler);
+                }
+            }
+
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+
+            // Create buttons
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('btn-option');
+                button.addEventListener('click', () => handleAnswer(option));
+                optionsContainer.appendChild(button);
+            });
+
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = 10;
+            timerDisplay.textContent = translations[currentLang].timer + timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = translations[currentLang].timer + timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    gameOver();
+                }
+            }, 1000);
+        }
+
+        function handleAnswer(selected) {
+            clearTimeout(timerInterval);
+
+            const buttons = Array.from(optionsContainer.querySelectorAll('button'));
+            const correctButton = buttons.find(btn => btn.textContent === currentQuestion.name);
+            const selectedButton = buttons.find(btn => btn.textContent === selected);
+
+            if (correctButton) correctButton.classList.add('correct');
+
+            if (selected === currentQuestion.name) {
+                score++;
+                updateDisplays();
+                setTimeout(nextQuestion, 500);
+            } else {
+                if (selectedButton) selectedButton.classList.add('wrong');
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('flagGameHighScore', highScore);
+                highScoreDisplay.textContent = translations[currentLang].highScore + highScore;
+            }
+
+            const t = translations[currentLang];
+            const gameOverDiv = document.createElement('div');
+            gameOverDiv.className = 'game-over';
+            gameOverDiv.innerHTML = `
+                <div>${t.gameOver}</div>
+                <div>Your Score: ${score}</div>
+                <div>High Score: ${highScore}</div>
+                <button onclick="restartGame()">${t.playAgain}</button>
+            `;
+            document.body.appendChild(gameOverDiv);
+        }
+
+        function restartGame() {
+            // Clear game state
+            score = 0;
+            round = 1;
+            remainingCountries = [...allCountries];
+            updateDisplays();
+            
+            // Hide game-over modal
+            const gameOverDiv = document.querySelector('.game-over');
+            if (gameOverDiv) gameOverDiv.remove();
+            
+            // Show start button
+            startBtn.style.display = 'block';
+        }
+
+        function updateDisplays() {
+            const t = translations[currentLang];
+            scoreDisplay.textContent = t.score + score;
+            roundDisplay.textContent = t.round + round;
+        }
+    </script>
+</body>
+</html>
